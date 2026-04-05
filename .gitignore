@@ -1,0 +1,27 @@
+# Build artifacts
+/target/
+
+# Benchmark outputs
+bench_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Temporary test and run outputs
+bench_results/
+
+# Claude Code agent memory (contains local paths)
+.claude/
+
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/

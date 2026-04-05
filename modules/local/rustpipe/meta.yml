@@ -1,0 +1,103 @@
+name: rustpipe
+description: |
+  Fast downstream RNA-seq analysis in Rust. Performs TMM normalization,
+  differential expression, PCA, GSEA, and HVG selection on count matrices
+  produced by Salmon or STAR. Replaces the R-based DESEQ2_QC module in
+  nf-core/rnaseq and is designed as the companion tool to RustQC.
+keywords:
+  - rnaseq
+  - differential-expression
+  - pca
+  - gsea
+  - hvg
+  - tmm-normalization
+  - parquet
+
+tools:
+  - rustpipe:
+      description: >
+        Fast downstream RNA-seq analysis tool written in Rust. Handles TMM
+        normalization, differential expression (edgeR-equivalent), PCA, GSEA,
+        and HVG selection. Outputs Parquet files for efficient downstream use.
+      homepage: https://github.com/prairiebio/rustpipe
+      documentation: https://github.com/prairiebio/rustpipe#readme
+      doi: ""
+      licence: ["GPL-3.0-only"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information. Must contain at least an
+        "id" key that uniquely identifies the contrast or sample group.
+        e.g. [ id: 'treatment_vs_control' ]
+  - counts:
+      type: file
+      description: |
+        Tab-separated count matrix with genes as rows and samples as columns.
+        Produced by nf-core/rnaseq tximeta/tximport steps from Salmon or STAR
+        quantification output.
+      pattern: "*.{tsv,txt}"
+  - samplesheet:
+      type: file
+      description: |
+        CSV samplesheet describing samples. Must contain a sample_id column
+        matching the column headers in the count matrix, and the column named
+        by group_col.
+      pattern: "*.csv"
+  - group_col:
+      type: string
+      description: |
+        Name of the column in the samplesheet that defines contrast groups
+        (e.g. "condition", "treatment"). Used to build DE contrasts.
+  - gene_sets:
+      type: file
+      description: |
+        Optional gene-set file in GMT or JSON format for GSEA enrichment
+        analysis. Pass file('NO_FILE') to skip enrichment.
+      pattern: "*.{gmt,json}"
+
+output:
+  - meta:
+      type: map
+      description: Groovy Map of sample information, forwarded from input.
+  - de_results:
+      type: file
+      description: |
+        Differential expression results as Parquet files, one per contrast.
+        Contains log2 fold-change, p-value, adjusted p-value, and gene
+        identifiers.
+      pattern: "rustpipe_out/de/*.parquet"
+  - pca:
+      type: file
+      description: |
+        PCA output as Parquet files. Includes sample scores (PC coordinates)
+        and per-component variance explained.
+      pattern: "rustpipe_out/pca/*.parquet"
+  - multiqc_files:
+      type: file
+      description: |
+        MultiQC-compatible TSV files for integration into the nf-core/rnaseq
+        MultiQC report. Includes PCA summary and sample distance matrix.
+      pattern: "rustpipe_out/*_mqc.tsv"
+  - enrichment:
+      type: file
+      description: |
+        GSEA enrichment results as JSON files, one per contrast. Only emitted
+        when a gene_sets file is provided.
+      pattern: "rustpipe_out/enrichment/*.json"
+  - manifest:
+      type: file
+      description: |
+        JSON manifest summarising the pipeline run: tool version, parameters,
+        input checksums, and output file inventory.
+      pattern: "rustpipe_out/pipeline_manifest.json"
+  - versions:
+      type: file
+      description: YAML file containing software versions.
+      pattern: "versions.yml"
+
+authors:
+  - "@prairiebio"
+maintainers:
+  - "@prairiebio"
