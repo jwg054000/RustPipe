@@ -1,0 +1,7 @@
+sample_id,condition
+SAMPLE_01,control
+SAMPLE_02,control
+SAMPLE_03,control
+SAMPLE_04,treated
+SAMPLE_05,treated
+SAMPLE_06,treated
