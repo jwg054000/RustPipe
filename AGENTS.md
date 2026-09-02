@@ -7,3 +7,4 @@ Downstream of Seqera RustQC. Consume rustqc as a published binary/image only —
 - Do not add scRNA here (that is RustPipe-SC)
 - Do not change TMM / DE / PCA / GSEA math
 - GPL-3.0. Prefer a PR over committing to main
+- Git author and committer must be Josh Garton `<jwg054000@gmail.com>`. Never Grok, Cursor Agent, Copilot, or any other tool identity. No vendor PR footers.
