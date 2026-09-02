@@ -2,6 +2,15 @@
 
 All notable changes to RustPipe will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `rustpipe convert --from featurecounts` strips Subread/RustQC annotation columns (Geneid + sample counts only)
+- Nextflow process `RUSTQC_RNA`: `rustqc rna $bam --gtf $gtf --paired --outdir ${id}_qc` (pinned `ghcr.io/seqeralabs/rustqc:v0.2.1`)
+
+
+All notable changes to RustPipe will be documented in this file.
+
 ## [0.1.0] - 2026-04-04
 
 ### Added

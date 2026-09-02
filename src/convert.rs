@@ -161,3 +161,104 @@ pub fn csv_to_parquet(
 
     Ok(())
 }
+
+
+/// Subread / RustQC featureCounts annotation columns (after Geneid).
+const FEATURECOUNTS_ANNOTATION: [&str; 5] = ["Chr", "Start", "End", "Strand", "Length"];
+
+/// Convert a featureCounts TSV (RustQC or Subread) to gene × sample Parquet.
+///
+/// Skips `#` comment lines, keeps `Geneid`, drops the 5 annotation columns,
+/// and writes remaining sample count columns as integers.
+pub fn featurecounts_to_parquet(
+    input: &Path,
+    output: &Path,
+    compression_level: u32,
+) -> Result<()> {
+    let start = Instant::now();
+
+    let is_gz = input.extension().map(|e| e == "gz").unwrap_or(false);
+    let (effective_input, _temp_file) = if is_gz {
+        info!("Decompressing gzip input...");
+        let temp = decompress_gz(input)?;
+        (temp.clone(), Some(temp))
+    } else {
+        (input.to_path_buf(), None)
+    };
+
+    let raw = std::fs::read_to_string(&effective_input).with_context(|| {
+        format!("Cannot read featureCounts file: {}", effective_input.display())
+    })?;
+    let stripped: String = raw
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n");
+    if stripped.trim().is_empty() {
+        anyhow::bail!("featureCounts file has no data rows: {}", input.display());
+    }
+
+    let tmp_tsv = effective_input.with_extension("fc_stripped.tsv");
+    std::fs::write(&tmp_tsv, stripped.as_bytes())
+        .with_context(|| format!("Cannot write stripped TSV: {}", tmp_tsv.display()))?;
+
+    let mut lf = LazyCsvReader::new(tmp_tsv.to_string_lossy().to_string())
+        .with_has_header(true)
+        .with_separator(b'\t')
+        .with_infer_schema_length(Some(1000))
+        .finish()?;
+
+    let schema = lf.collect_schema().context("Cannot read featureCounts schema")?;
+    let names: Vec<String> = schema.iter_names().map(|s| s.to_string()).collect();
+    if names.is_empty() || names[0] != "Geneid" {
+        let _ = std::fs::remove_file(&tmp_tsv);
+        anyhow::bail!(
+            "expected first column Geneid, found {:?}",
+            names.first()
+        );
+    }
+    let drop: Vec<String> = names
+        .iter()
+        .filter(|n| FEATURECOUNTS_ANNOTATION.contains(&n.as_str()))
+        .cloned()
+        .collect();
+    if drop.len() != FEATURECOUNTS_ANNOTATION.len() {
+        let _ = std::fs::remove_file(&tmp_tsv);
+        anyhow::bail!(
+            "expected annotation columns {:?}, found {:?}",
+            FEATURECOUNTS_ANNOTATION,
+            names
+        );
+    }
+
+    let mut df = lf.collect()?;
+    for c in &drop {
+        let _ = df.drop_in_place(c.as_str())?;
+    }
+    info!(
+        "featureCounts adapter: {} genes × {} sample columns",
+        df.height(),
+        df.width().saturating_sub(1)
+    );
+
+    let file = std::fs::File::create(output)?;
+    let zstd_level =
+        ZstdLevel::try_new(compression_level as i32).unwrap_or(ZstdLevel::try_new(3).unwrap());
+    ParquetWriter::new(file)
+        .with_compression(ParquetCompression::Zstd(Some(zstd_level)))
+        .with_row_group_size(Some(5000))
+        .finish(&mut df)?;
+
+    let _ = std::fs::remove_file(&tmp_tsv);
+    if let Some(ref temp) = _temp_file {
+        let _ = std::fs::remove_file(temp);
+    }
+
+    info!(
+        "Converted featureCounts {} → {} in {:.3}s",
+        input.display(),
+        output.display(),
+        start.elapsed().as_secs_f64()
+    );
+    Ok(())
+}
