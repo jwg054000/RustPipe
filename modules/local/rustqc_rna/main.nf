@@ -42,7 +42,7 @@ process FEATURECOUNTS_CONVERT {
     conda "${projectDir}/modules/local/rustpipe/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/rustpipe:0.1.0' :
-        'ghcr.io/jwg054000/RustPipe:0.1.0' }"
+        'ghcr.io/jwg054000/rustpipe:0.1.0@sha256:16ba09adbf9085beecd9e10fc57aa6a12f019f1a0f50ce5ddc42c91fdb3cb3bf' }"
 
     input:
     path tsvs

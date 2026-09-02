@@ -56,7 +56,8 @@ Image name: `ghcr.io/jwg054000/rustpipe` (linux/amd64, built from this Dockerfil
 
 ```bash
 # After the first GHCR publish (Actions workflow or the commands below):
-docker pull ghcr.io/jwg054000/rustpipe:0.1.0
+docker pull ghcr.io/jwg054000/rustpipe:0.1.0@sha256:16ba09adbf9085beecd9e10fc57aa6a12f019f1a0f50ce5ddc42c91fdb3cb3bf
+# tags latest / 0.1.0 / sha-88c010a95cd1fa7d9e1dd6b425b6cb2c2054acfd share that digest
 docker buildx imagetools inspect ghcr.io/jwg054000/rustpipe:0.1.0 --format '{{.Manifest.Digest}}'
 ```
 
