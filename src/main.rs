@@ -68,6 +68,10 @@ enum Commands {
         /// Column separator character (auto-detected if omitted)
         #[arg(long)]
         separator: Option<char>,
+
+        /// Input dialect: omit for generic CSV/TSV, or `featurecounts` to strip Subread annotation columns
+        #[arg(long)]
+        from: Option<String>,
     },
 
     /// TMM normalization + log2 CPM transform
@@ -271,10 +275,21 @@ fn main() -> anyhow::Result<()> {
             output,
             compression_level,
             separator,
+            from,
         } => {
             info!("Converting {} → {}", input.display(), output.display());
-            let sep = separator.map(|c| c as u8);
-            convert::csv_to_parquet(&input, &output, compression_level, sep)?;
+            match from.as_deref() {
+                Some("featurecounts") => {
+                    convert::featurecounts_to_parquet(&input, &output, compression_level)?;
+                }
+                Some(other) => anyhow::bail!(
+                    "unknown --from `{other}`; use `featurecounts` or omit --from"
+                ),
+                None => {
+                    let sep = separator.map(|c| c as u8);
+                    convert::csv_to_parquet(&input, &output, compression_level, sep)?;
+                }
+            }
         }
 
         Commands::Normalize {

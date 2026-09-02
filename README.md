@@ -34,7 +34,7 @@ Every algorithm is validated against its R reference implementation on real-worl
 | HVG selection | Scanpy (Seurat v3) | Spearman rho (gene ranks) | 0.990 |
 | | | Jaccard (top 500 HVGs) | 1.000 |
 
-46 tests (35 unit + 11 integration).
+47 tests (35 unit + 12 integration).
 
 ## Install
 
@@ -76,7 +76,7 @@ rustpipe enrich    -d de/ -g hallmark.gmt -o enrichment/
 
 | Command | Description |
 |---------|-------------|
-| `convert` | CSV/TSV to Parquet (auto-detects delimiter, handles gzip) |
+| `convert` | CSV/TSV to Parquet (auto-detects delimiter, handles gzip). `--from featurecounts` strips the 6 Subread annotation columns |
 | `filter` | Low-count gene filtering (edgeR filterByExpr pattern) |
 | `normalize` | TMM normalization + log2 CPM transform |
 | `hvg` | Highly variable gene selection (VST, log-log OLS) |
@@ -210,3 +210,16 @@ GPL-3.0. See [LICENSE](LICENSE).
 Josh Garton, 2026. RustPipe: Fast downstream RNA-seq analysis in Rust.
 https://github.com/jwg054000/RustPipe
 ```
+
+
+## Seqera RustQC
+
+RustPipe does not vendor RustQC. Pin and run the published image, then convert:
+
+```
+rustqc rna $bam --gtf $gtf --paired --outdir ${id}_qc
+rustpipe convert --from featurecounts ${id}_qc/featurecounts/*.featureCounts.tsv -o counts.parquet
+rustpipe pipeline -i counts.parquet -m samples.csv -g condition -o results/
+```
+
+Nextflow: `--bam` plus `--gtf` runs process `RUSTQC_RNA` then the existing `RUSTPIPE` process. Image pin: `ghcr.io/seqeralabs/rustqc:v0.2.1@sha256:2d06741730318d4a419a91e6cc6c57c589759eb7ec1b2c0e74e0e1366c301189`.
