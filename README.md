@@ -50,6 +50,31 @@ cargo build --release
 
 Don't have Rust? Install it from [rustup.rs](https://rustup.rs/).
 
+## Container
+
+Image name: `ghcr.io/jwg054000/rustpipe` (linux/amd64, built from this Dockerfile). prairie-rna-stream consumes the published digest-pinned image — do not copy this tree into that repo.
+
+```bash
+# After the first GHCR publish (Actions workflow or the commands below):
+docker pull ghcr.io/jwg054000/rustpipe:0.1.0
+docker buildx imagetools inspect ghcr.io/jwg054000/rustpipe:0.1.0 --format '{{.Manifest.Digest}}'
+```
+
+Local publish (PAT needs `write:packages` and `read:packages`; do not store the token in git):
+
+```bash
+echo "$GHCR_PAT" | docker login ghcr.io -u jwg054000 --password-stdin
+docker build --platform linux/amd64 -t ghcr.io/jwg054000/rustpipe:0.1.0 \
+  -t ghcr.io/jwg054000/rustpipe:$(git rev-parse HEAD) \
+  -t ghcr.io/jwg054000/rustpipe:latest .
+docker push ghcr.io/jwg054000/rustpipe:0.1.0
+docker push ghcr.io/jwg054000/rustpipe:$(git rev-parse HEAD)
+docker push ghcr.io/jwg054000/rustpipe:latest
+docker buildx imagetools inspect ghcr.io/jwg054000/rustpipe:0.1.0
+```
+
+After the first push, set the GitHub package public (Packages → rustpipe → Package settings → Change visibility) so Nextflow can pull without auth.
+
 ## Quick Start
 
 ```bash
