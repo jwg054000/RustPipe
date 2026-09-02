@@ -1,8 +1,8 @@
 # ── Build stage ──────────────────────────────────────────────────────────────
 # Uses the official Rust image so the toolchain is pre-installed.
 # bookworm = Debian 12 (latest stable), matches the runtime base.
-# Cargo.lock is version 4 (Cargo >= 1.78). rust:1.75 cannot parse it.
-FROM rust:1.85-bookworm AS builder
+# Cargo.lock is version 4; home@0.5.12 in the lockfile requires rustc 1.88.
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /build
 
